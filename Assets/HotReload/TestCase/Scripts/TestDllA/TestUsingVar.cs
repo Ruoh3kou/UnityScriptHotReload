@@ -16,11 +16,13 @@ namespace NS_Test
             string ret = string.Empty;
 
 
-            // ÓĞĞ©µÍ°æ±¾ Unity ´øµÄmonoÄ¬ÈÏ²ÎÊı²»Ö§³Ö using var
+            // æœ‰äº›ä½ç‰ˆæœ¬ Unity å¸¦çš„monoé»˜è®¤å‚æ•°ä¸æ”¯æŒ using var
 #if APPLY_PATCH
-        using var f = File.OpenRead(path);
-        using var sr = new StreamReader(f);
-        ret = sr.ReadToEnd();
+            using (var f = File.OpenRead(path))
+            {
+                using (var sr = new StreamReader(f))
+                {
+                    ret = sr.ReadToEnd();
 #else
             using (var f = File.OpenRead(path))
             {
@@ -30,7 +32,9 @@ namespace NS_Test
                 }
             }
 #endif
-            return ret;
+                    return ret;
+                }
+            }
         }
     }
 

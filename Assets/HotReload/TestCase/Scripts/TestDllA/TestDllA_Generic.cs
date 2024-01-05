@@ -15,25 +15,28 @@ namespace NS_Test_Generic
 
         public void FuncA(out int val)
         {
-            using var f = File.OpenRead("ProjectSettings/ProjectVersion.txt");
-            byte[] buff = new byte[f.Length];
-            f.Read(buff, 0, buff.Length);
-
-            string strVer = Encoding.UTF8.GetString(buff);
-
-            val = 22;
+            using (var f = File.OpenRead("ProjectSettings/ProjectVersion.txt"))
             {
-                var _genericFiledTest = new TestClsG<object>();
-                // 通过泛型类型的非泛型函数间接调用泛型方法 `ShowG`，最终的MethodSpec不会被记录，需要自己处理
-                var val0 = _genericFiledTest.Show_Test(0x2345);
-            }
-            {// 两种不同类型实例间接调用ShowG
-                var _genericFiledTest = new TestClsG<int>();
-                //var ojb2 = _genericFiledTest.ShowG<object>();
-                //var val0 = _genericFiledTest.Show_Test(0x3456);
-            }
+                byte[] buff = new byte[f.Length];
+                f.Read(buff, 0, buff.Length);
 
-            EditorUtility.DisplayDialog("title5", "text5", "OK");
+                string strVer = Encoding.UTF8.GetString(buff);
+
+                val = 22;
+                {
+                    var _genericFiledTest = new TestClsG<object>();
+                    // 通过泛型类型的非泛型函数间接调用泛型方法 `ShowG`，最终的MethodSpec不会被记录，需要自己处理
+                    var val0 = _genericFiledTest.Show_Test(0x2345);
+                }
+                {
+                    // 两种不同类型实例间接调用ShowG
+                    var _genericFiledTest = new TestClsG<int>();
+                    //var ojb2 = _genericFiledTest.ShowG<object>();
+                    //var val0 = _genericFiledTest.Show_Test(0x3456);
+                }
+
+                EditorUtility.DisplayDialog("title5", "text5", "OK");
+            }
         }   
     }
 
