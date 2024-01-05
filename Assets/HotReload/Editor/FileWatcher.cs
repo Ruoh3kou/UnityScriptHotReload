@@ -8,7 +8,7 @@ using UnityEngine;
 namespace ScriptHotReload
 {
     /// <summary>
-    /// ¼àÊÓcsÎÄ¼ş±ä»¯
+    /// ç›‘è§†csæ–‡ä»¶å˜åŒ–
     /// </summary>
     [InitializeOnLoad]
     public class FileWatcher
@@ -21,7 +21,7 @@ namespace ScriptHotReload
         }
 
         /// <summary>
-        /// ĞèÒª¼àÊÓµÄÄ¿Â¼ÁĞ±í£¬¿É×ÔĞĞĞŞ¸Ä
+        /// éœ€è¦ç›‘è§†çš„ç›®å½•åˆ—è¡¨ï¼Œå¯è‡ªè¡Œä¿®æ”¹
         /// </summary>
         public static List<string> dirsToWatch = new List<string>() { "Assets" };
 
@@ -35,12 +35,15 @@ namespace ScriptHotReload
 
         static FileWatcher()
         {
-            if(HotReloadConfig.hotReloadEnabled)
-                EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            if (HotReloadConfig.hotReloadEnabled)
+            {
+                StopWatch();
+                StartWatch();
+            }
         }
 
         /// <summary>
-        /// »ñÈ¡·¢Éú·¢Éú¸Ä±äµÄÎÄ¼şÁĞ±í, (FilePath:AssemblyName)
+        /// è·å–å‘ç”Ÿå‘ç”Ÿæ”¹å˜çš„æ–‡ä»¶åˆ—è¡¨, (FilePath:AssemblyName)
         /// </summary>
         /// <returns></returns>
         public static string[] GetChangedFile()
@@ -63,20 +66,6 @@ namespace ScriptHotReload
             return ret.ToArray();
         }
 
-        private static void OnPlayModeStateChanged(PlayModeStateChange mode)
-        {
-            switch(mode)
-            {
-                case PlayModeStateChange.EnteredPlayMode:
-                    StartWatch();
-                    break;
-                case PlayModeStateChange.ExitingPlayMode:
-                    StopWatch();
-                    break;
-                default: break;
-            }
-        }
-
         private static void StartWatch()
         {
             _fileSystemWatchers.Clear();
@@ -89,8 +78,8 @@ namespace ScriptHotReload
             //    if (!Directory.Exists(dir))
             //        continue;
 
-            //    // ½«×ÓÄ¿Â¼µÄ·ûºÅÁ´½ÓÒ²¼ÓÈë¼à¿ØÁĞ±í
-            //    // (.net6 ²Å¿ªÊ¼Ö§³Ö DirectoryInfo.LinkTargetÊôĞÔ£¬·ñÔòÖ»ÄÜwin/macµ¥¶ÀÊµÏÖ, Òò´ËÔİ²»¿¼ÂÇ)
+            //    // å°†å­ç›®å½•çš„ç¬¦å·é“¾æ¥ä¹ŸåŠ å…¥ç›‘æ§åˆ—è¡¨
+            //    // (.net6 æ‰å¼€å§‹æ”¯æŒ DirectoryInfo.LinkTargetå±æ€§ï¼Œå¦åˆ™åªèƒ½win/macå•ç‹¬å®ç°, å› æ­¤æš‚ä¸è€ƒè™‘)
             //    string[] subDirs = Directory.GetDirectories(dir, "*", SearchOption.AllDirectories);
             //    foreach(var subDir in subDirs)
             //    {
@@ -127,10 +116,10 @@ namespace ScriptHotReload
 
         private static void OnFileChanged(object source, FileSystemEventArgs e)
         {
-            if (!_isWatching) return; // ´Ë»Øµ÷º¯Êı²»ÔÚÖ÷Ïß³ÌÖ´ĞĞ£¬Òò´Ë²»ÄÜÊ¹ÓÃ Application.isPlaying ÅĞ¶Ï
+            if (!_isWatching) return; // æ­¤å›è°ƒå‡½æ•°ä¸åœ¨ä¸»çº¿ç¨‹æ‰§è¡Œï¼Œå› æ­¤ä¸èƒ½ä½¿ç”¨ Application.isPlaying åˆ¤æ–­
 
             var filePath = e.FullPath.Replace('\\', '/').Substring(Environment.CurrentDirectory.Length + 1);
-            if (filePath.Contains("/HotReload/Editor/")) return; // ²å¼ş×ÔÉíÂ·¾¶£¬²»reload
+            if (filePath.Contains("/HotReload/Editor/")) return; // æ’ä»¶è‡ªèº«è·¯å¾„ï¼Œä¸reload
 
             if(!File.Exists(filePath)) return;
 

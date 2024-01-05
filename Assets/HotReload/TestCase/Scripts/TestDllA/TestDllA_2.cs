@@ -11,7 +11,7 @@ namespace NS_Test
         public int Mul_2(int x, int y)
         {
             PrintMethodLocation_2(MethodBase.GetCurrentMethod());
-            return x * y + 2;
+            return x * y + 5;
         }
 
         void PrintMethodLocation_2(MethodBase method)

@@ -20,7 +20,7 @@ namespace ScriptHotReload
     [InitializeOnLoad]
     public class HotReloadExecutor
     {
-        const string kMenue_HotReload = "Tools/HotReload/是否自动重载";
+        const string kMenu_HotReload = "Tools/HotReload/是否自动重载";
 
         public static int patchNo { get; private set; } = 0;
         public static List<string> patchDlls { get; private set; } = new List<string>();
@@ -36,29 +36,17 @@ namespace ScriptHotReload
         /// </summary>
         public static bool autoReloadMode
         {
-            get
-            {
-                return EditorPrefs.GetBool(kMenue_HotReload, false);
-            }
-            private set
-            {
-                EditorPrefs.SetBool(kMenue_HotReload, value);
-            }
+            get { return EditorPrefs.GetBool(kMenu_HotReload, false); }
+            private set { EditorPrefs.SetBool(kMenu_HotReload, value); }
         }
 
         #region 菜单功能
-        [MenuItem("Tools/HotReload/测试")]
-        static void TestFunc()
-        {
-            var script = AssetDatabase.LoadAssetAtPath<MonoScript>("Assets/HotReload/TestCase/Scripts/TestDllA/TestDllA_2.cs");
-        }
-
         /// <summary>
         /// 重载事件是否已触发（auto模式下将始终触发）
         /// </summary>
         static bool reloadEventFired;
 
-        [MenuItem("Tools/HotReload/立即重载 (Play时有效) #R")]
+        [MenuItem("Tools/HotReload/立即重载 #R")]
         static void Menu_ManualReload()
         {
             reloadEventFired = true;
@@ -67,23 +55,23 @@ namespace ScriptHotReload
         /// <summary>
         /// 切换 [自动重载] 菜单函数
         /// </summary>
-        [MenuItem(kMenue_HotReload, false)] // "Tools/HotReload/是否自动重载"
-        static void Menue_SwapAutoReloadMode()
+        [MenuItem(kMenu_HotReload, false)] // "Tools/HotReload/是否自动重载"
+        static void Menu_SwapAutoReloadMode()
         {
-            bool isChecked = Menu.GetChecked(kMenue_HotReload);
+            bool isChecked = Menu.GetChecked(kMenu_HotReload);
             isChecked = !isChecked;
 
             autoReloadMode = isChecked;
-            Menu.SetChecked(kMenue_HotReload, isChecked);
+            Menu.SetChecked(kMenu_HotReload, isChecked);
 
             // 切换到自动模式时主动设置触发初始值为true, 反之手动模式初始不触发
             reloadEventFired = isChecked;
         }
 
-        [MenuItem(kMenue_HotReload, true)]
-        static bool Menue_AutoReloadMode_Check()
+        [MenuItem(kMenu_HotReload, true)]
+        static bool Menu_AutoReloadMode_Check()
         {
-            Menu.SetChecked(kMenue_HotReload, autoReloadMode);
+            Menu.SetChecked(kMenu_HotReload, autoReloadMode);
             return true;
         }
         #endregion
@@ -100,57 +88,54 @@ namespace ScriptHotReload
 #if UNITY_EDITOR_WIN
             dotnetName += ".exe";
 #endif
-            var unityEditorPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-            _dotnetPath = Directory.GetFiles(unityEditorPath, dotnetName, SearchOption.AllDirectories).FirstOrDefault().Replace('\\', '/');
+            ProcessModule processModule = Process.GetCurrentProcess().MainModule;
+            if (processModule != null)
+            {
+                var unityEditorPath = Path.GetDirectoryName(processModule.FileName);
+                if (unityEditorPath != null)
+                {
+                    _dotnetPath = Directory.GetFiles(unityEditorPath, dotnetName, SearchOption.AllDirectories).FirstOrDefault()?.Replace('\\', '/');
 
-            // unity 2020 里有两个 csc.dll，我们选择Tools目录下的
-            _cscPath = (from f in Directory.GetFiles(unityEditorPath, cscName, SearchOption.AllDirectories) 
-                        let dir = Path.GetDirectoryName(f) 
-                        where dir.Contains("Tools")
-                        || dir.Contains("DotNetSdkRoslyn")
-                        select f)
-                .FirstOrDefault().Replace('\\', '/');
+                    // unity 2020 里有两个 csc.dll，我们选择Tools目录下的
+                    _cscPath = (from f in Directory.GetFiles(unityEditorPath, cscName, SearchOption.AllDirectories)
+                            let dir = Path.GetDirectoryName(f)
+                            where dir.Contains("Tools")
+                                  || dir.Contains("DotNetSdkRoslyn")
+                            select f)
+                        .FirstOrDefault()
+                        ?.Replace('\\', '/');
+                }
+            }
 
             UnityEngine.Debug.Assert(!string.IsNullOrEmpty(_dotnetPath));
             UnityEngine.Debug.Assert(!string.IsNullOrEmpty(_cscPath));
-
-            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            
+            // 进入播放模式后，首先删除所有之前残留的patch文件
+            foreach (string file in Directory.GetFiles(HotReloadConfig.kTempScriptDir))
+            {
+                if (file.EndsWith(".dll") || file.EndsWith(".pdb"))
+                {
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogError($"delete patch file fail:{ex.Message}");
+                    }
+                }
+            }
+            
             EditorApplication.update += OnEditorUpdate;
 
             // hack: 提前在主线程初始下Hook相关静态类，因为下面我们将在子线程中执行Hook, 而Unity相关函数只允许在主线程调用
             HookUtils.GetPageAlignedAddr(1234, 10);
             LDasm.IsiOS();
         }
-
-        private static void OnPlayModeStateChanged(PlayModeStateChange mode)
-        {
-            switch (mode)
-            {
-                case PlayModeStateChange.EnteredPlayMode:
-                    // 进入播放模式后，首先删除所有之前残留的patch文件
-                    foreach(string file in Directory.GetFiles(HotReloadConfig.kTempScriptDir))
-                    {
-                        if (file.EndsWith(".dll") || file.EndsWith(".pdb"))
-                        {
-                            try
-                            {
-                                File.Delete(file);
-                            }
-                            catch(Exception ex)
-                            {
-                                UnityEngine.Debug.LogError($"delete patch file fail:{ex.Message}");
-                            }
-                        }
-                            
-                    }
-                    break;
-                default: break;
-            }
-        }
-
+        
         private static void OnEditorUpdate()
         {
-            if (LDasm.IsiOS() || !(HotReloadConfig.hotReloadEnabled && Application.isPlaying))
+            if (LDasm.IsiOS() || !HotReloadConfig.hotReloadEnabled)
                 return;
 
             if (_patchTask != null)
@@ -158,14 +143,14 @@ namespace ScriptHotReload
                 DispatchTaskOutput();
                 if (_patchTask.IsCompleted)
                 {
-                    if(_patchTask.Result == 0)
+                    if (_patchTask.Result == 0)
                     {
                         try
                         {
                             patchNo++;
                             UnityEngine.Debug.Log("<color=yellow>热重载完成</color>");
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             UnityEngine.Debug.LogErrorFormat("热重载出错:{0}\r\n{1}", ex.Message, ex.StackTrace);
                         }
@@ -179,10 +164,10 @@ namespace ScriptHotReload
                 return;
             }
 
-            if(autoReloadMode)
+            if (autoReloadMode)
             {
                 if (!FileWatcher.changedSinceLastGet
-                || new TimeSpan(DateTime.Now.Ticks - FileWatcher.lastModifyTime.Ticks).TotalSeconds < HotReloadConfig.kAutoReloadPatchCheckSpan)
+                    || new TimeSpan(DateTime.Now.Ticks - FileWatcher.lastModifyTime.Ticks).TotalSeconds < HotReloadConfig.kAutoReloadPatchCheckSpan)
                     return;
             }
             else
@@ -214,7 +199,7 @@ namespace ScriptHotReload
             public string workDir;
             public string dotnetPath;
             public string cscPath;
-            
+
             public string tempScriptDir;
             public string builtinAssembliesDir;
             public string patchDllPathFormat;
@@ -225,6 +210,7 @@ namespace ScriptHotReload
             public string[] defines;
             public string[] allAssemblyPathes;
         }
+
         static void GenPatcherInputArgsFile()
         {
             var inputArgs = new InputArgs();
@@ -232,7 +218,7 @@ namespace ScriptHotReload
             inputArgs.workDir = Environment.CurrentDirectory.Replace('\\', '/');
             inputArgs.dotnetPath = _dotnetPath;
             inputArgs.cscPath = _cscPath;
-            
+
             inputArgs.tempScriptDir = HotReloadConfig.kTempScriptDir;
             inputArgs.builtinAssembliesDir = HotReloadConfig.kBuiltinAssembliesDir;
             inputArgs.patchDllPathFormat = HotReloadConfig.kPatchDllPathFormat;
@@ -286,8 +272,14 @@ namespace ScriptHotReload
                 }
             };
 
-            using (var sr = procPathcer.StandardOutput) { outputProcMsgs(sr); }
-            using (var sr = procPathcer.StandardError) { outputProcMsgs(sr); }
+            using (var sr = procPathcer.StandardOutput)
+            {
+                outputProcMsgs(sr);
+            }
+            using (var sr = procPathcer.StandardError)
+            {
+                outputProcMsgs(sr);
+            }
 
             int exitCode = -1;
             if (procPathcer.WaitForExit(60 * 1000)) // 最长等待1分钟
@@ -317,7 +309,7 @@ namespace ScriptHotReload
                         //exitCode = -1;
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     HookAssemblies.UnHookDlls(patchDlls);
                     _patchTaskOutput.Enqueue($"[Error][ParseOutput] {ex.Message}\r\n{ex.StackTrace}");
@@ -330,7 +322,7 @@ namespace ScriptHotReload
 
         static void DispatchTaskOutput()
         {
-            while(_patchTaskOutput.TryDequeue(out var line))
+            while (_patchTaskOutput.TryDequeue(out var line))
             {
                 line = line.Replace("<br/>", "\r\n");
                 if (line.StartsWith("[Info]"))
@@ -372,6 +364,7 @@ namespace ScriptHotReload
                     return name;
                 }
             }
+
             public int patchNo;
             public List<MethodData> methodsNeedHook;
         }
@@ -392,7 +385,5 @@ namespace ScriptHotReload
 
             return ret;
         }
-
     }
-
 }

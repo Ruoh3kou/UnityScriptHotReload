@@ -102,7 +102,7 @@ namespace ScriptHotReload
 
                     OnCompileSuccess?.Invoke(compileStatus);
                 }
-                else if(Application.isPlaying) // PlayMode 下Unity会停止调用 TickCompilationPipeline, 导致编译请求进度无法前进，所以需要我们手动去执行
+                else // PlayMode 下Unity会停止调用 TickCompilationPipeline, 导致编译请求进度无法前进，所以需要我们手动去执行
                 {
                     ManualTickCompilationPipeline();
                 }

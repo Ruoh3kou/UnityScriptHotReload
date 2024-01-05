@@ -7,7 +7,7 @@ using UnityEngine;
 namespace ScriptHotReload
 {
     /// <summary>
-    /// ·ºĞÍº¯ÊıµÄHookWrapper(PatcherÊ¹ÓÃ£¬ÇëÎğÊÖ¶¯Ìí¼Ó)
+    /// æ³›å‹å‡½æ•°çš„HookWrapper(Patcherä½¿ç”¨ï¼Œè¯·å‹¿æ‰‹åŠ¨æ·»åŠ )
     /// </summary>
     public class GenericMethodIndexAttribute : Attribute
     {
@@ -15,20 +15,20 @@ namespace ScriptHotReload
     }
 
     /// <summary>
-    /// ·ºĞÍº¯ÊıÉú³ÉµÄwrapperº¯ÊıÌå(PatcherÊ¹ÓÃ£¬ÇëÎğÊÖ¶¯Ìí¼Ó)
+    /// æ³›å‹å‡½æ•°ç”Ÿæˆçš„wrapperå‡½æ•°ä½“(Patcherä½¿ç”¨ï¼Œè¯·å‹¿æ‰‹åŠ¨æ·»åŠ )
     /// </summary>
     public class GenericMethodWrapperAttribute : Attribute
     {
         /// <summary>
-        /// Åä¶ÔË÷Òı£¬Óë HookWrapperGenericAttribute ÏàÍ¬£¬¿ÉÒÔ¶à¶ÔÒ»
+        /// é…å¯¹ç´¢å¼•ï¼Œä¸ HookWrapperGenericAttribute ç›¸åŒï¼Œå¯ä»¥å¤šå¯¹ä¸€
         /// </summary>
         public int index;
         /// <summary>
-        /// wrapper º¯Êı¹ØÁªµÄ·ºĞÍ·½·¨ÊµÀı
+        /// wrapper å‡½æ•°å…³è”çš„æ³›å‹æ–¹æ³•å®ä¾‹
         /// </summary>
         public MethodBase genericInstMethod;
         /// <summary>
-        /// ·½·¨ËùÊôµÄ·ºĞÍÀàĞÍµÄÀàĞÍ²ÎÊıÁĞ±í + ·ºĞÍ·½·¨µÄÀàĞÍ²ÎÊıÁĞ±í
+        /// æ–¹æ³•æ‰€å±çš„æ³›å‹ç±»å‹çš„ç±»å‹å‚æ•°åˆ—è¡¨ + æ³›å‹æ–¹æ³•çš„ç±»å‹å‚æ•°åˆ—è¡¨
         /// </summary>
         public Type[] typeGenArgs;
     }
